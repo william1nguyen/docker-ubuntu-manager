@@ -1,0 +1,55 @@
+version: "3.8"
+
+services:
+  ubuntu:
+    build: .
+    container_name: ubuntu
+    ports:
+      - "2222:22" # ssh access
+      - "8080:80" # http
+      - "8443:443" # https
+
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: "2.0"
+        reservations:
+          memory: 1G
+          cpus: "0.5"
+
+    volumes:
+      - ubuntu_home:/home
+      - ubuntu_etc:/etc
+      - ubuntu_var:/var
+      - ubuntu_opt:/opt
+      - ubuntu_srv:/srv
+      - ./shared:/shared # shared with host
+
+    networks:
+      - ubuntu_network
+
+    restart: unless-stopped
+
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+
+volumes:
+  ubuntu_home:
+    driver: local
+
+  ubuntu_etc:
+    driver: local
+
+  ubuntu_var:
+    driver: local
+
+  ubuntu_opt:
+    driver: local
+
+  ubuntu_srv:
+    driver: local
+
+networks:
+  ubuntu_network:
+    driver: bridge
