@@ -9,8 +9,13 @@ RUN apt-get install -y \
   htop \
   net-tools \ 
   iputils-ping \
+  iptables \ 
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
+
+# Setup VPN option
+RUN apt-get update
+RUN apt-get install -y openvpn
 
 RUN mkdir /var/run/sshd
 

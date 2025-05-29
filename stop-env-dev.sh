@@ -1,3 +1,3 @@
 #!/bin/sh
 
-docker-compose -f docker-compose.yml -p ubuntu down
+docker-compose -f docker-compose.yml -p lazy-ubuntu down

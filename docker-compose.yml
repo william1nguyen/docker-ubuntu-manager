@@ -1,14 +1,31 @@
-version: "3.8"
-
 services:
+  openvpn:
+    image: workleast/openvpn
+    container_name: openvpn
+    ports:
+      - "1194:1194/udp"
+      - "80:8080/tcp"
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - openvpn_data:/opt/Dockovpn_data
+    networks:
+      private_network:
+        ipv4_address: 172.20.0.2
+      public_network:
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+      HOST_ADDR: ${PUBLIC_IP}
+    sysctls:
+      - net.ipv4.ip_forward=1
+
   ubuntu:
     build: .
     container_name: ubuntu
-    ports:
-      - "2222:22" # ssh access
-      - "8080:80" # http
-      - "8443:443" # https
-
+    expose:
+      - 22
     deploy:
       resources:
         limits:
@@ -17,39 +34,58 @@ services:
         reservations:
           memory: 1G
           cpus: "0.5"
-
     volumes:
       - ubuntu_home:/home
       - ubuntu_etc:/etc
       - ubuntu_var:/var
       - ubuntu_opt:/opt
       - ubuntu_srv:/srv
-      - ./shared:/shared # shared with host
-
-    networks:
-      - ubuntu_network
-
+      - ./shared:/shared
     restart: unless-stopped
-
+    networks:
+      private_network:
+        ipv4_address: 172.20.0.3
     environment:
-      - TZ=Asia/Ho_Chi_Minh
+      TZ: Asia/Ho_Chi_Minh
+    depends_on:
+      - openvpn
+
+  external-ubuntu:
+    build: .
+    container_name: external-ubuntu
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: "2.0"
+        reservations:
+          memory: 1G
+          cpus: "0.5"
+    restart: unless-stopped
+    networks:
+      public_network:
 
 volumes:
   ubuntu_home:
     driver: local
-
   ubuntu_etc:
     driver: local
-
   ubuntu_var:
     driver: local
-
   ubuntu_opt:
     driver: local
-
   ubuntu_srv:
+    driver: local
+  openvpn_data:
     driver: local
 
 networks:
-  ubuntu_network:
+  private_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+
+  public_network:
     driver: bridge
