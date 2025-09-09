@@ -14,15 +14,15 @@ services:
     networks:
       private_network:
         ipv4_address: 172.20.0.2
-      public_network:
+      external_network:
         ipv4_address: 194.147.221.13
     environment:
       TZ: Asia/Ho_Chi_Minh
-      HOST_ADDR: ${PUBLIC_IP:-194.147.221.13}
+      HOST_ADDR: ${EXTERNAL_IP:-194.147.221.13}
     sysctls:
       - net.ipv4.ip_forward=1
 
-  ubuntu:
+  private-ubuntu:
     build: .
     container_name: ubuntu
     expose:
@@ -64,6 +64,21 @@ services:
           cpus: "0.5"
     restart: unless-stopped
     networks:
+      external_network:
+
+  public-ubuntu:
+    build: .
+    container_name: external-ubuntu
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: "2.0"
+        reservations:
+          memory: 1G
+          cpus: "0.5"
+    restart: unless-stopped
+    networks:
       public_network:
 
 volumes:
@@ -88,9 +103,12 @@ networks:
         - subnet: 172.20.0.0/16
           gateway: 172.20.0.1
 
-  public_network:
+  external_network:
     driver: bridge
     ipam:
       config:
         - subnet: 194.147.0.0/16
           gateway: 194.147.0.1
+  
+  public_network:
+    driver: bridge
