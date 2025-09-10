@@ -8,36 +8,19 @@ Fast setup for an Ubuntu server with Docker, including SSH access, persistent da
 
 1. [Features](#features)
 2. [Prerequisites](#prerequisites)
-3. [Ubuntu Server Setup](#ubuntu-server-setup)
-
-   - [Install Required Packages](#install-required-packages)
-   - [Add User](#add-user)
-   - [Start SSH Server](#start-ssh-server)
-
-4. [Checking `private-ubuntu` Container](#checking-private-ubuntu-container)
-
-   - [Get Server IP Address](#get-server-ip-address)
-   - [Check CPU / RAM / Stats](#check-cpu--ram--stats)
-
-5. [OpenVPN Setup](#openvpn-setup)
-
-   - [List Profiles](#list-profiles)
-   - [Get a Client Configuration](#get-a-client-configuration)
-   - [Create a New Client](#create-a-new-client)
-   - [Remove a Client](#remove-a-client)
-   - [Apply `.ovpn` File on `external-ubuntu`](#apply-ovpn-file-on-external-ubuntu)
-   - [Verify VPN Connection](#verify-vpn-connection)
-   - [Add Push Routes on OpenVPN Server](#add-push-routes-on-openvpn-server)
-
-6. [Workflow Overview](#workflow-overview)
-7. [Notes](#notes)
+3. [Docker Compose Workflow](#docker-compose-workflow)
+4. [OpenVPN Management](#openvpn-management)
+5. [Applying VPN on External Container](#applying-vpn-on-external-container)
+6. [Verifying VPN Connection](#verifying-vpn-connection)
+7. [Push Routes Configuration](#push-routes-configuration)
+8. [Notes](#notes)
 
 ---
 
 ## Features
 
-- Quick setup of Ubuntu server with SSH access
-- Persistent storage for data
+- Quick setup of Ubuntu server containers
+- Persistent data storage
 - Integrated OpenVPN server with client management
 - Private and external network configuration for lab isolation
 
@@ -55,145 +38,147 @@ Ensure your Docker environment is ready:
 
 ---
 
-## Ubuntu Server Setup
+## Docker Compose Workflow
 
-### Install Required Packages
+The Makefile provides the following targets:
 
-Inside the Ubuntu container, install:
+### Start Lab
 
 ```bash
-apt-get update
-apt-get install -y \
-    openssh-server \
-    systemctl \
-    sudo \
-    net-tools \
-    iputils-ping \
-    htop
+# Normal mode
+make start
+
+# VPN mode (vpn)
+make start mode=vpn
+```
+
+This will start all containers defined in:
+
+- Normal: `deployments/docker-compose.ubuntu.yml`
+- VPN: `deployments/vpn/docker-compose.vpn.yml`
+
+---
+
+### Stop Lab
+
+```bash
+make stop
 ```
 
 ---
 
-### Add User
-
-Create a new `ubuntu` user with home directory and bash shell, and add to sudo group:
+### Reset Lab
 
 ```bash
-RUN useradd -m -s /bin/bash ubuntu && \
-    echo 'ubuntu:mysecretpassword' | chpasswd && \
-    usermod -aG sudo ubuntu
+make reset
 ```
+
+This cleans up:
+
+- Networks
+- Containers
+- Volumes
+- Images
 
 ---
 
-### Start SSH Server
-
-- Managed via the container's `docker-entrypoint.sh`.
-
----
-
-## Checking `private-ubuntu` Container
-
-### Get Server IP Address
+### List OpenVPN Profiles
 
 ```bash
-docker inspect private-ubuntu | grep IPAddress
+make listconfigs
 ```
 
-### Check CPU / RAM / Stats
-
-```bash
-docker stats private-ubuntu
-```
-
----
-
-## OpenVPN Setup
-
-### List Profiles
+Equivalent to:
 
 ```bash
 docker exec openvpn ./listconfigs.sh
 ```
 
-### Get a Client Configuration
+---
+
+## OpenVPN Management
+
+### Apply VPN Config to a Container
+
+```bash
+make apply-vpn-config SERVER=<container_name>
+```
+
+Steps performed:
+
+1. Fetch `PROFILE_ID` from OpenVPN server:
+
+```bash
+docker exec openvpn ./listconfigs.sh
+```
+
+2. Copy client configuration to host and target container:
 
 ```bash
 docker cp openvpn:/opt/Dockovpn_data/clients/${PROFILE_ID}/client.ovpn ./data/client.ovpn
-docker cp ./data/client.ovpn external-ubuntu:/
+docker cp ./data/client.ovpn <container_name>:/client.ovpn
 ```
 
-### Create a New Client
+3. Install OpenVPN and run client in container:
 
 ```bash
-docker exec openvpn ./genclient.sh n ${PROFILE_ID}
+docker exec -d <container_name> bash -c "apt-get update && apt-get install -y openvpn && openvpn --config /client.ovpn --daemon"
 ```
 
-### Remove a Client
+> **Note:** Ensure `./data` directory exists on host.
+
+---
+
+### Apply Push Routes on OpenVPN Server
 
 ```bash
-docker exec openvpn ./rmclient.sh ${PROFILE_ID}
+make apply-push-routes
 ```
 
-### Apply `.ovpn` File on `external-ubuntu`
+This will:
+
+1. Copy `push-routes.conf` from host into OpenVPN server:
 
 ```bash
-apt-get update
-apt-get install -y openvpn
-openvpn --config client.ovpn --daemon
+docker cp ./config/push-routes.conf openvpn:/opt/Dockovpn/config/push-routes.conf
 ```
 
-### Verify VPN Connection
+2. Append routes to server configuration:
 
-- Check interface creation:
+```bash
+docker exec -d openvpn bash -c "cat /opt/Dockovpn/config/push-routes.conf >> /opt/Dockovpn/config/server.conf"
+```
+
+---
+
+## Verifying VPN Connection
+
+```bash
+make verify-vpn-config SERVER=<container_name>
+```
+
+This checks:
+
+- VPN interface creation:
 
 ```bash
 ip addr show tun0
 ```
 
-- Check routes and default gateway:
+- Routing table:
 
 ```bash
 ip route show
 ```
 
-### Add Push Routes on OpenVPN Server
-
-Append existing push routes and add a custom route for `private-ubuntu`:
-
-```bash
-cat /opt/Dockovpn/config/push-routes.conf >> /opt/Dockovpn/config/server.conf
-# Add custom push route
-echo 'push "route 10.0.0.0 255.255.0.0"' >> /opt/Dockovpn/config/server.conf
-```
-
-> ⚠️ Adjust `10.0.0.0 255.255.0.0` to match the subnet of `private-ubuntu` container.
-
----
-
-## Workflow Overview
-
-**Services:**
-
-- `openvpn` – connected to both private and external networks
-- `private-ubuntu` – connected to private network
-- `external-ubuntu` – connected to external network (needs VPN to access `ubuntu`)
-
-**Access Flow:**
-
-```
-external-ubuntu --(VPN config)--> OpenVPN --(SSH)--> ubuntu
-```
-
-**Goal:**
-
-- Restrict access so `external-ubuntu` can only connect to the `ubuntu` container via OpenVPN.
-- Direct public access to `ubuntu` is blocked.
+Output is formatted for readability.
 
 ---
 
 ## Notes
 
+- `DATA_DIR` is `./data` and used for storing client configuration files.
+- `CONFIG_DIR` is `./config` and contains `push-routes.conf`.
+- `VPN_SERVER` is default `openvpn`; adjust if container name differs.
 - Ensure proper network isolation when testing VPN routes.
-- Recommended Docker setup due to Orbstack network limitations.
 - Always verify network interfaces and firewall rules after configuration.

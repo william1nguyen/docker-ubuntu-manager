@@ -1,7 +1,9 @@
 version: "3.9"
 
 x-common-server: &common-server
-  build: .
+  build:
+    context: ../../build
+    dockerfile: Dockerfile
   restart: unless-stopped
   deploy:
     resources:
@@ -23,7 +25,6 @@ services:
       - NET_RAW
     volumes:
       - openvpn_data:/opt/Dockovpn_data
-      - ./config/push-routes.conf:/opt/Dockovpn/config/push-routes.conf
     networks:
       private_network:
         ipv4_address: ${PRIVATE_OPENVPN_IP:-172.20.0.112}
@@ -36,7 +37,6 @@ services:
       - net.ipv4.ip_forward=1
 
   private-ubuntu:
-    build: .
     container_name: private-ubuntu
     expose:
       - "22"
@@ -47,7 +47,6 @@ services:
     <<: *common-server
 
   external-ubuntu:
-    build: .
     container_name: external-ubuntu
     cap_add:
       - NET_ADMIN
