@@ -66,10 +66,9 @@ endif
 # Apply push-routes to VPN server (VPN_SERVER=<name_or_ip>)
 apply-push-routes:
 	@echo "Using VPN server: $(VPN_SERVER)"
-	docker cp $(CONFIG_DIR)/push-routes.conf $(VPN_SERVER):/opt/Dockovpn/config/push-routes.conf; \
-	docker exec -d $(VPN_SERVER) bash -c "\
-		cat /opt/Dockovpn/config/push-routes.conf >> /opt/Dockovpn/config/server.conf \
-	"
+	@subnet=$${PRIVATE_NETWORK_SUBNET}; \
+	mask="255.255.0.0"; \
+	docker exec $(VPN_SERVER) bash -c "echo 'push \"route $$subnet $$mask\";' >> /opt/Dockovpn/config/server.conf"
 
 # Verify VPN config inside container (SERVER=<name_or_ip>)
 verify-vpn-config:
