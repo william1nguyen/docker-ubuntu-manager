@@ -182,3 +182,11 @@ Output is formatted for readability.
 - `VPN_SERVER` is default `openvpn`; adjust if container name differs.
 - Ensure proper network isolation when testing VPN routes.
 - Always verify network interfaces and firewall rules after configuration.
+
+## TODO
+
+- [ ] Assign a dedicated private IP for each `ssh-ubuntu` server instead of port mapping.
+- [ ] Add option to load a GUI interface for Ubuntu servers (e.g., lightweight desktop environment).
+- [ ] Isolate resources (CPU, memory, disk) for each Ubuntu server container to prevent interference.
+- [ ] Consider automating VPN configuration application after container creation.
+- [ ] Implement monitoring/logging for each Ubuntu server container.
