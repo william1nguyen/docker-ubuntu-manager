@@ -1,6 +1,6 @@
 # Docker Ubuntu Manager
 
-Fast setup for an Ubuntu server with Docker, including SSH access, persistent data, and OpenVPN configuration.
+Fast setup for an Ubuntu server with Docker, including SSH access, persistent data, OpenVPN configuration, and optional GUI mode.
 
 ---
 
@@ -9,11 +9,14 @@ Fast setup for an Ubuntu server with Docker, including SSH access, persistent da
 1. [Features](#features)
 2. [Prerequisites](#prerequisites)
 3. [Docker Compose Workflow](#docker-compose-workflow)
-4. [OpenVPN Management](#openvpn-management)
-5. [Applying VPN on External Container](#applying-vpn-on-external-container)
-6. [Verifying VPN Connection](#verifying-vpn-connection)
-7. [Push Routes Configuration](#push-routes-configuration)
-8. [Notes](#notes)
+4. [SSH Access](#ssh-access)
+5. [GUI Mode (--gui)](#gui-mode---gui)
+6. [OpenVPN Management](#openvpn-management)
+7. [Apply VPN Config to a Container](#apply-vpn-config-to-a-container)
+8. [Verifying VPN Connection](#verifying-vpn-connection)
+9. [Apply Push Routes on OpenVPN Server](#apply-push-routes-on-openvpn-server)
+10. [Notes](#notes)
+11. [TODO](#todo)
 
 ---
 
@@ -23,6 +26,7 @@ Fast setup for an Ubuntu server with Docker, including SSH access, persistent da
 - Persistent data storage
 - Integrated OpenVPN server with client management
 - Private and external network configuration for lab isolation
+- **Optional GUI desktop with Chrome browser via VNC/noVNC**
 
 ---
 
@@ -50,20 +54,16 @@ make start
 
 # VPN mode (vpn)
 make start mode=vpn
+
+# GUI mode (--gui)
+make start --gui
 ```
 
 This will start all containers defined in:
 
-- Normal: `deployments/docker-compose.ubuntu.yml`
-- VPN: `deployments/vpn/docker-compose.vpn.yml`
-
----
-
-### Stop Lab
-
-```bash
-make stop
-```
+- Normal: `deployments/ubuntu/server/docker-compose.yml`
+- VPN: `deployments/vpn/docker-compose.yml`
+- GUI: `deployments/ubuntu/gui/docker-compose.yml`
 
 ---
 
@@ -92,6 +92,54 @@ Equivalent to:
 
 ```bash
 docker exec openvpn ./listconfigs.sh
+```
+
+---
+
+## SSH Access
+
+After starting the lab, you can connect to any `ssh-ubuntu` container via SSH:
+
+```bash
+ssh root@localhost -p 2222
+```
+
+- **Username:** `root`
+- **Password:** `rootpassword`
+
+> 🔑 Ports may vary if you run multiple containers. Check the `docker-compose` mapping or logs.
+
+---
+
+## GUI Mode (--gui)
+
+To start an Ubuntu server with a lightweight desktop (XFCE) and Google Chrome:
+
+```bash
+make start --gui
+```
+
+This will:
+
+- Run an Ubuntu server with SSH + GUI (XFCE4)
+- Start VNC server on `:1` (default port `5901`)
+- Expose noVNC at [http://localhost:6080/vnc.html](http://localhost:6080/vnc.html)
+
+### Access Methods
+
+- **SSH:** `ssh root@localhost -p 2222`
+- **VNC Client:** Connect to `localhost:5901`
+- **Web Browser (noVNC):** [http://localhost:6080/vnc.html](http://localhost:6080/vnc.html)
+
+### Launching Chrome
+
+Inside the VNC session:
+
+- Double-click **Google Chrome (Optimized)** icon on desktop, OR
+- Run:
+
+```bash
+/root/start-chrome.sh
 ```
 
 ---
@@ -182,6 +230,8 @@ Output is formatted for readability.
 - `VPN_SERVER` is default `openvpn`; adjust if container name differs.
 - Ensure proper network isolation when testing VPN routes.
 - Always verify network interfaces and firewall rules after configuration.
+
+---
 
 ## TODO
 
