@@ -2,7 +2,7 @@ version: "3.9"
 
 x-common-server: &common-server
   build:
-    context: ../build/ubuntu/gui
+    context: ../../build/ubuntu/gui
     dockerfile: Dockerfile
   restart: unless-stopped
   deploy:
