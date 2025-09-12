@@ -51,9 +51,9 @@ Fast setup for an Ubuntu server with Docker, including SSH access, persistent da
 Copy-paste these 3 lines to bring up the lab instantly:
 
 ```bash
-$ git clone https://github.com/<your-repo>/docker-ubuntu-manager.git
-cd docker-ubuntu-manager
-$ make start --gui
+git clone https://github.com/william1nguyen/uvm.git
+cd uvm
+make start --gui
 ```
 
 Now open http://localhost:6080/vnc.html and you’re in 🚀
