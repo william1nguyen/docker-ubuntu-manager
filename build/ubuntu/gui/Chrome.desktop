@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Google Chrome (Optimized)
+Comment=Web Browser optimized for Docker
+GenericName=Web Browser
+Exec=/root/start-chrome.sh %U
+StartupNotify=true
+Terminal=false
+Icon=google-chrome
+Categories=Network;WebBrowser;

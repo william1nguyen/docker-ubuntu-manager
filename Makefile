@@ -4,10 +4,14 @@
 APP_NAME := lazy-ubuntu
 mode ?= normal
 
-DOCKER_COMPOSE := \
-  $(if $(filter vpn,$(mode)), \
-       deployments/vpn/docker-compose.vpn.yml, \
-       deployments/docker-compose.ubuntu.yml)
+ifeq ($(filter --gui,$(MAKECMDGOALS)),--gui)
+  DOCKER_COMPOSE := deployments/ubuntu/gui/docker-compose.yml
+else
+  DOCKER_COMPOSE := \
+    $(if $(filter vpn,$(mode)), \
+         deployments/vpn/docker-compose.yml, \
+         deployments/ubuntu/server/docker-compose.yml)
+endif
 
 DATA_DIR := ./data
 CONFIG_DIR := ./config

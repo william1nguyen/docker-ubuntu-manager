@@ -24,8 +24,8 @@ RUN useradd -m -s /bin/bash ubuntu && \
   usermod -aG sudo ubuntu
 
 RUN echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config && \
-    echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config && \
-    echo 'PubkeyAuthentication yes' >> /etc/ssh/sshd_config
+  echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config && \
+  echo 'PubkeyAuthentication yes' >> /etc/ssh/sshd_config
 
 RUN echo 'root:rootpassword' | chpasswd
 

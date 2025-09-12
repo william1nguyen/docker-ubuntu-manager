@@ -1,0 +1,36 @@
+version: "3.9"
+
+x-common-server: &common-server
+  build:
+    context: ../build/ubuntu/server
+    dockerfile: Dockerfile
+  restart: unless-stopped
+  deploy:
+    resources:
+      limits:
+        memory: 4G
+        cpus: "2.0"
+      reservations:
+        memory: 1G
+        cpus: "0.5"
+  environment:
+    TZ: Asia/Ho_Chi_Minh
+
+services:
+  ssh-ubuntu:
+    container_name: ssh-ubuntu
+    ports:
+      - 2222:22
+      - 5901:5901
+      - 6080:6080
+    networks:
+      ssh-network:
+    restart: unless-stopped
+    <<: *common-server
+
+networks:
+  ssh-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${SSH_NETWORK_SUBNET:-172.20.0.0}/16
