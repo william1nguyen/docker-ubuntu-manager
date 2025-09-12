@@ -1,22 +1,77 @@
 # Docker Ubuntu Manager
 
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://www.docker.com/)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04-orange)](https://ubuntu.com/)
+[![OpenVPN](https://img.shields.io/badge/OpenVPN-Integrated-green)](https://openvpn.net/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Project-WIP-red)](#)
+
 Fast setup for an Ubuntu server with Docker, including SSH access, persistent data, OpenVPN configuration, and optional GUI mode.
 
 ---
+
+## Demo
+
+<div align="center">
+
+### 🔑 noVNC Login
+
+<img src="docs/publics/login.png" alt="noVNC Login" width="70%"/>
+
+---
+
+### 🖥️ XFCE Desktop
+
+<img src="docs/publics/xfce-desktop.png" alt="XFCE Desktop" width="70%"/>
+
+---
+
+### 🌐 Chrome Browser
+
+<img src="docs/publics/chrome-browser.png" alt="Chrome Browser" width="70%"/>
+
+---
+
+### 💻 XFCE Terminal
+
+<img src="docs/publics/xcfe-terminal.png" alt="XFCE Terminal" width="70%"/>
+
+---
+
+### 🔒 SSH Access
+
+<img src="docs/publics/ssh-access.png" alt="SSH Access" width="70%"/>
+
+</div>
+
+---
+
+## Quick Start (TL;DR)
+
+Copy-paste these 3 lines to bring up the lab instantly:
+
+```bash
+$ git clone https://github.com/<your-repo>/docker-ubuntu-manager.git
+cd docker-ubuntu-manager
+$ make start --gui
+```
+
+Now open http://localhost:6080/vnc.html and you’re in 🚀
 
 ## Table of Contents
 
 1. [Features](#features)
 2. [Prerequisites](#prerequisites)
 3. [Docker Compose Workflow](#docker-compose-workflow)
-4. [SSH Access](#ssh-access)
-5. [GUI Mode (--gui)](#gui-mode---gui)
-6. [OpenVPN Management](#openvpn-management)
-7. [Apply VPN Config to a Container](#apply-vpn-config-to-a-container)
-8. [Verifying VPN Connection](#verifying-vpn-connection)
-9. [Apply Push Routes on OpenVPN Server](#apply-push-routes-on-openvpn-server)
-10. [Notes](#notes)
-11. [TODO](#todo)
+4. [Make Help](#make-help)
+5. [SSH Access](#ssh-access)
+6. [GUI Mode (--gui)](#gui-mode---gui)
+7. [OpenVPN Management](#openvpn-management)
+8. [Apply VPN Config to a Container](#apply-vpn-config-to-a-container)
+9. [Verifying VPN Connection](#verifying-vpn-connection)
+10. [Apply Push Routes on OpenVPN Server](#apply-push-routes-on-openvpn-server)
+11. [Notes](#notes)
+12. [TODO](#todo)
 
 ---
 
@@ -66,6 +121,26 @@ This will start all containers defined in:
 - GUI: `deployments/ubuntu/gui/docker-compose.yml`
 
 ---
+
+## Make Help
+
+You can list all available commands with:
+
+```bash
+make help
+```
+
+Lazy Ubuntu - Available commands
+
+```bash
+apply-push-routes     Apply push routes to OpenVPN server
+apply-vpn-config      Apply VPN config to a container (SERVER=<name>)
+listconfigs           List OpenVPN profiles on server
+reset                 Reset lab (remove containers, networks, volumes, images)
+start                 Start lab (normal / vpn / gui)
+stop                  Stop current lab
+verify-vpn-config     Verify VPN interface & routes inside container (SERVER=<name>)
+```
 
 ### Reset Lab
 

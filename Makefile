@@ -18,18 +18,24 @@ CONFIG_DIR := ./config
 
 VPN_SERVER := openvpn
 
+# Colors
+CYAN  := \033[36m
+GREEN := \033[32m
+RESET := \033[0m
+BOLD  := \033[1m
+
 # ====================================================
 # Docker Compose targets
 # ====================================================
 .PHONY: start stop reset listconfigs
 
-start:
+start: ## Start lab (normal / vpn / gui)
 	docker-compose -f $(DOCKER_COMPOSE) -p $(APP_NAME) --compatibility up -d
 
-stop:
+stop: ## Stop current lab
 	docker-compose -f $(DOCKER_COMPOSE) -p $(APP_NAME) down
 
-reset:
+reset: ## Reset lab (remove containers, networks, volumes, images)
 	@CONTAINERS=$$(docker ps -a -q); \
 	if [ -n "$$CONTAINERS" ]; then \
 		echo "Stopping containers..."; \
@@ -42,16 +48,15 @@ reset:
 	docker volume prune -a -f
 	docker image prune -a -f
 
-listconfigs:
-	docker exec openvpn ./listconfigs.sh
+listconfigs: ## List OpenVPN profiles on server
+	docker exec $(VPN_SERVER) ./listconfigs.sh
 
 # ====================================================
 # VPN management targets
 # ====================================================
 .PHONY: apply-vpn-config apply-push-routes verify-vpn-config
 
-# Apply VPN config to a container (SERVER=<name_or_ip>)
-apply-vpn-config:
+apply-vpn-config: ## Apply VPN config to a container (SERVER=<name>)
 ifndef SERVER
 	$(error SERVER is not set. Usage: make apply-vpn-config SERVER=<name_or_ip>)
 endif
@@ -67,15 +72,13 @@ endif
 		openvpn --config /client.ovpn --daemon \
 	"
 
-# Apply push-routes to VPN server (VPN_SERVER=<name_or_ip>)
-apply-push-routes:
+apply-push-routes: ## Apply push routes to OpenVPN server
 	@echo "Using VPN server: $(VPN_SERVER)"
 	@subnet=$${PRIVATE_NETWORK_SUBNET}; \
 	mask="255.255.0.0"; \
 	docker exec $(VPN_SERVER) bash -c "echo 'push \"route $$subnet $$mask\";' >> /opt/Dockovpn/config/server.conf"
 
-# Verify VPN config inside container (SERVER=<name_or_ip>)
-verify-vpn-config:
+verify-vpn-config: ## Verify VPN interface & routes inside container (SERVER=<name>)
 ifndef SERVER
 	$(error SERVER is not set. Usage: make verify-vpn-config SERVER=<name_or_ip>)
 endif
@@ -84,3 +87,16 @@ endif
 		ip addr show tun0; \
 		ip route show \
 	' | column -t
+
+# ====================================================
+# Help
+# ====================================================
+.PHONY: help
+help: ## Show this help
+	@echo ""
+	@echo "$(BOLD)$(CYAN)Lazy Ubuntu - Available commands$(RESET)"
+	@echo ""
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
+		| sort \
+		| awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(RESET) %s\n", $$1, $$2}'
+	@echo ""
